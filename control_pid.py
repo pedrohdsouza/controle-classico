@@ -11,11 +11,6 @@ class ControlPID:
         self.time = None
         self.t1 = None
         self.t2 = None
-        self.k = None
-        self.tau = None
-        self.theta = None
-        self.hs = None
-        self.hcl = None
 
     def loadmat(self, transfer_function):
         self.mat = loadmat(transfer_function)
@@ -32,52 +27,55 @@ class ControlPID:
     def calculate_k(self):
         delta_y = self.output[-1]
         delta_u = self.step[0]
-        self.k = float(delta_y / delta_u)
-        return self.k
+        return float(delta_y / delta_u)
 
     def calculate_tau(self):
+        #print('Saida = ', self.output[-1])
+
         y_t1 = 0.283*self.output[-1]
         y_t2 = 0.632*self.output[-1]
+
+        #print('y(t1) 0.283*saida = ', y_t1)
+        #print('y(t2) 0.632*saida = ', y_t2)
 
         closest_from_y_t1 = self.closest(self.output, y_t1)
         closest_from_y_t2 = self.closest(self.output, y_t2)
 
-        self.t1 = np.where(self.output == closest_from_y_t1)[0]
-        self.t2 = np.where(self.output == closest_from_y_t2)[0]
-        
-        self.tau = float(1.5 * (self.t2 - self.t1))
-        return self.tau
+        self.t1 = self.time[0][int(np.where(self.output == closest_from_y_t1)[0])]
+        self.t2 = self.time[0][int(np.where(self.output == closest_from_y_t2)[0])]
 
-    def calculate_theta(self):
-        self.theta = float(self.t2 - self.tau)
-        return self.theta
+        #print('t1 = ', self.t1)
+        #print('t2 = ', self.t2)
+        
+        return float(1.5 * (self.t2 - self.t1))
+
+    def calculate_theta(self, tau):
+        return float(self.t2 - tau)
     
     def closest(self, lst, K):
         lst = np.asarray(lst)
         idx = (np.abs(lst - K)).argmin()
         return lst[idx]
     
-    def transfer_function(self):
-        num = np.array([self.k])
-        den = np.array([self.tau, 1])
+    def transfer_function(self, k, tau, theta):
+        num = np.array([k])
+        den = np.array([tau, 1])
         H = cnt.tf(num, den)
         n_pade = 20
-        num_pade, den_pade = cnt.pade(self.theta, n_pade)
-        H_pade = cnt.tf(num_pade, den_pade )
-        self.hs = cnt.series(H , H_pade)
-        return self.hs
+        num_pade, den_pade = cnt.pade(theta, n_pade)
+        H_pade = cnt.tf(num_pade, den_pade)
+        return cnt.series(H , H_pade)
     
-    def feedback(self):
-        self.hcl = cnt.feedback(self.hs * 14, 1)
-        return self.hcl
+    def feedback(self, Hs):
+        return cnt.feedback(Hs * 14, 1)
 
-    def plot_output(self):
+    def plot_output(self, Hcl):
         t = np.linspace(0, 40, 100)
-        t, y = cnt.step_response(self.hcl, t)
+        t, y = cnt.step_response(Hcl, t)
 
         plt.plot(self.time.T, self.output, color='r', label='Saída')
         plt.plot(self.time.T, self.step, label='Degrau de entrada')
-        plt.plot(t, y, color='g')
+        plt.plot(t, y, color='g', label='Malha fechada')
 
         plt.xlabel (' t [ s ] ')
         plt.ylabel('Amplitude')

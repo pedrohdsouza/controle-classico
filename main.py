@@ -9,20 +9,22 @@ def main():
     control_pid.set_time()
 
     k = control_pid.calculate_k()
-    print(k)
+    print('k = ', k)
 
     tau = control_pid.calculate_tau()
-    print(tau)
+    print('tau = ', tau)
 
-    theta = control_pid.calculate_theta()
-    print(theta)
+    theta = control_pid.calculate_theta(tau)
+    print('theta = ', theta)
 
-    control_pid.transfer_function()
-    control_pid.feedback()
+    Hs = control_pid.transfer_function(k, tau, theta)
 
-    control_pid.plot_output()
+    print('Hs = ', Hs)
 
-    #control_pid.plot_feedback()
+    Hcl = control_pid.feedback(Hs)
+    print('Hcl = ', Hcl)
+
+    control_pid.plot_output(Hcl)
 
 if __name__=="__main__":
     main()
