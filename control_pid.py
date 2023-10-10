@@ -17,9 +17,11 @@ class ControlPID:
     
     def set_step(self):
         self.step = self.mat.get('degrau')
+        print("Degrau = ", self.step[0])
     
     def set_output(self):
         self.output = self.mat.get('saida')
+        print("saida = ", self.output[-1])
     
     def set_time(self):
         self.time = self.mat.get('t')
@@ -67,15 +69,51 @@ class ControlPID:
         return cnt.series(H , H_pade)
     
     def feedback(self, Hs):
-        return cnt.feedback(Hs * 14, 1)
+        return cnt.feedback(Hs, 1)
+    
+    def CHR2(self, k, tau, theta):
+        kp = 0.95*tau/(k*theta)
+        ti = 1.357*tau
+        td = 0.473*theta
 
-    def plot_output(self, Hcl):
+        return kp, ti, td
+    
+    def integral_erro(self, k, tau, theta):
+        kp = (1 / (theta/tau) + 0.2) / k
+        ti = ((0.3 * (theta / tau) + 1.2) / ((theta / tau) + 0.08)) * theta
+        td = (1 / (90 * (theta / tau))) * theta
+
+        return kp, ti, td
+    
+    def controlador_pid(self, kp, Ti, Td, Hs):
+        # Controlador proporcional
+        numkp = np. array ([kp])
+        denkp = np. array ([1])
+        #integral
+        numki = np. array ([kp])
+        denki = np. array ([Ti,0])
+        #derivativo
+        numkd = np. array ([kp*Td,0])
+        denkd = np. array ([1])
+
+        #Construindo o controlador PID
+        Hkp = cnt.tf(numkp , denkp)
+        Hki=cnt.tf(numki , denki)
+        Hkd=cnt.tf(numkd , denkd)
+        Hctrl1 = cnt.parallel (Hkp , Hki)
+        Hctrl = cnt.parallel (Hctrl1 , Hkd)
+        Hdel = cnt.series (Hs , Hctrl)
+        #Fazendo a realimentação
+        Hcl = cnt.feedback(Hdel, 1)
+        return Hcl
+
+    def plot_output(self, Hs):
         t = np.linspace(0, 40, 100)
-        t, y = cnt.step_response(Hcl, t)
+        t, y = cnt.step_response(Hs * self.step[0], t)
 
         plt.plot(self.time.T, self.output, color='r', label='Saída')
         plt.plot(self.time.T, self.step, label='Degrau de entrada')
-        plt.plot(t, y, color='g', label='Malha fechada')
+        plt.plot(t, y)
 
         plt.xlabel (' t [ s ] ')
         plt.ylabel('Amplitude')

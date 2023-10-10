@@ -19,12 +19,37 @@ def main():
 
     Hs = control_pid.transfer_function(k, tau, theta)
 
-    print('Hs = ', Hs)
-
+    #Fazendo a realimentação
     Hcl = control_pid.feedback(Hs)
-    print('Hcl = ', Hcl)
+    
+    erro_malha_aberta = 55.35 - 14
+    erro_malha_fechada = 14 - 11.2
 
     control_pid.plot_output(Hcl)
+
+
+    kp, ti, td = control_pid.CHR2(k, tau, theta)
+    print(kp, ti, td)
+
+    for i in range(5, 15):
+        kp = i*0.1
+        #kp = 0.6 ou 0.7 é boa
+        Chr2 = control_pid.controlador_pid(kp, ti, td, Hs)
+        #control_pid.plot_output(Chr2)
+
+    Chr2 = control_pid.controlador_pid(0.7, ti, td, Hs)
+    control_pid.plot_output(Chr2)
+    kp, ti, td = control_pid.integral_erro(k, tau, theta)
+    print(kp, ti, td)
+
+    for i in range(2, 15):
+        kp = i*0.1
+        #kp = 0.6 ou 0.7 é boa
+
+    integral_erro = control_pid.controlador_pid(0.4, ti, td, Hs)
+
+    control_pid.plot_output(integral_erro)
+
 
 if __name__=="__main__":
     main()
