@@ -14,17 +14,19 @@ class ControlPID:
 
     def loadmat(self, transfer_function):
         self.mat = loadmat(transfer_function)
+        return self.mat
     
     def set_step(self):
         self.step = self.mat.get('degrau')
-        print("Degrau = ", self.step[0])
+        return self.step
     
     def set_output(self):
         self.output = self.mat.get('saida')
-        print("saida = ", self.output[-1])
+        return self.output
     
     def set_time(self):
         self.time = self.mat.get('t')
+        return self.time
 
     def calculate_k(self):
         delta_y = self.output[-1]
@@ -107,13 +109,14 @@ class ControlPID:
         Hcl = cnt.feedback(Hdel, 1)
         return Hcl
 
-    def plot_output(self, Hs):
+    def plot_output(self, transfer_function):
         t = np.linspace(0, 40, 100)
-        t, y = cnt.step_response(Hs * self.step[0], t)
+        t, y = cnt.step_response(transfer_function * self.step[0], t)
 
+        plt.subplot(1, 2, 1)
         plt.plot(self.time.T, self.output, color='r', label='Saída')
         plt.plot(self.time.T, self.step, label='Degrau de entrada')
-        plt.plot(t, y)
+        plt.plot(t, y, color='b', label='Malha Fechada')
 
         plt.xlabel (' t [ s ] ')
         plt.ylabel('Amplitude')
