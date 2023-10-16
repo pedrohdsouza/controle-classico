@@ -63,6 +63,7 @@ class Main():
         plt.plot(self.time.T, self.step, label='Degrau de entrada')
         plt.xlabel (' t [ s ] ')
         plt.ylabel('Amplitude')
+        plt.title('Original')
         plt.grid()
 
         plt.subplot(2, 3, 2)
@@ -75,7 +76,6 @@ class Main():
         plt.grid()
 
         t, y = cnt.step_response(Hcl * self.step[0], t)
-
         plt.subplot(2, 3, 3)
         plt.plot(self.time.T, self.output, color='r', label='Saída')
         plt.plot(self.time.T, self.step, label='Degrau de entrada')
@@ -114,9 +114,9 @@ class Main():
         print()
 
         menu_options = {
-        1: 'Gerar dados de controle grupo 14',
-        2: 'Entrar com kp, ti e td para calcular controle CHR2',
-        3: 'Exit',
+        1: 'Gerar gráficos - Grupo 14',
+        2: 'Entrar com valores para realizar o controle usando CHR2 e Integral de Erro',
+        3: 'Sair',
         }
 
         for key in menu_options.keys():
@@ -139,9 +139,49 @@ class Main():
             if option == 1:
                 self.run()
             if option == 2:
-                kp = input('Entre com o valor de kp: ')
-                ti = input('Entre com o valor de ti: ')
-                td = input('Entre com o valor de td: ')
+                control_pid = ControlPID()
+
+                k = float(input('Entre com o valor de k: '))
+                tau = float(input('Entre com o valor de tau: '))
+                theta = float(input('Entre com o valor de theta: '))
+                degrau = float(input('Entre com o valor do degrau: '))
+                degrau = np.full(100, degrau)
+
+                Hs = control_pid.transfer_function(k, tau, theta)
+
+                Hcl = control_pid.feedback(Hs)
+
+                kp, ti, td = control_pid.CHR2(k, tau, theta)
+
+                Chr2 = control_pid.controlador_pid(kp, ti, td, Hs)
+
+                kp, ti, td = control_pid.integral_erro(k, tau, theta)
+
+                integral_erro = control_pid.controlador_pid(kp, ti, td, Hs)
+                
+                t = np.linspace(0, 40, 100)
+                t, y = cnt.step_response(Chr2 * degrau[0], t)
+                plt.subplot(2, 2, 1)
+                plt.plot(t, degrau, label='Degrau de entrada')
+                plt.plot(t, y, color='c')
+                plt.xlabel (' t [ s ] ')
+                plt.ylabel('Amplitude')
+                plt.title('Método CHR2')
+                plt.grid()
+
+                t, y = cnt.step_response(integral_erro * degrau[0], t)
+                plt.subplot(2, 2, 2)
+                plt.plot(t, degrau, label='Degrau de entrada')
+                plt.plot(t, y, color='m')
+                plt.xlabel (' t [ s ] ')
+                plt.ylabel('Amplitude')
+                plt.title('Método Integral do Erro')
+                plt.grid()
+
+                plt.suptitle("Controle PID")
+                plt.legend(loc="upper left")
+                plt.show()
+
             elif option == 3:
                 print('Saindo...')
                 exit()

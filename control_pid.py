@@ -18,6 +18,7 @@ class ControlPID:
     
     def set_step(self):
         self.step = self.mat.get('degrau')
+        print(len(self.step))
         return self.step
     
     def set_output(self):
@@ -89,22 +90,22 @@ class ControlPID:
     
     def controlador_pid(self, kp, Ti, Td, Hs):
         # Controlador proporcional
-        numkp = np. array ([kp])
-        denkp = np. array ([1])
+        numkp = np.array([kp])
+        denkp = np.array([1])
         #integral
-        numki = np. array ([kp])
-        denki = np. array ([Ti,0])
+        numki = np.array([kp])
+        denki = np.array([Ti,0])
         #derivativo
-        numkd = np. array ([kp*Td,0])
-        denkd = np. array ([1])
+        numkd = np.array([kp*Td,0])
+        denkd = np.array([1])
 
         #Construindo o controlador PID
-        Hkp = cnt.tf(numkp , denkp)
-        Hki=cnt.tf(numki , denki)
-        Hkd=cnt.tf(numkd , denkd)
-        Hctrl1 = cnt.parallel (Hkp , Hki)
-        Hctrl = cnt.parallel (Hctrl1 , Hkd)
-        Hdel = cnt.series (Hs , Hctrl)
+        Hkp = cnt.tf(numkp, denkp)
+        Hki=cnt.tf(numki, denki)
+        Hkd=cnt.tf(numkd, denkd)
+        Hctrl1 = cnt.parallel(Hkp, Hki)
+        Hctrl = cnt.parallel(Hctrl1 , Hkd)
+        Hdel = cnt.series(Hs , Hctrl)
         #Fazendo a realimentação
         Hcl = cnt.feedback(Hdel, 1)
         return Hcl
